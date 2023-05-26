@@ -30,7 +30,8 @@ struct MovieDetailScreen: View {
 }
 
 struct ReviewListScreen: View {
-    @Binding var path: [Route]
+    @EnvironmentObject private var appModel: AppModel
+    
     let reviews: [Review]
 
     var body: some View {
@@ -38,9 +39,9 @@ struct ReviewListScreen: View {
             Text(review.text)
         }
         .toolbar {
-            ToolbarItem(placement: .bottomBar) {
-                Button("Pop to Root") {
-                    path = []
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Logout") {
+                    appModel.logout()
                 }
             }
         }
@@ -70,7 +71,7 @@ struct ContentView_Previews: PreviewProvider {
                         case let .detail(movie):
                             MovieDetailScreen(movie: movie)
                         case let .reviews(reviews):
-                            ReviewListScreen(path: .constant([]), reviews: reviews)
+                            ReviewListScreen(reviews: reviews)
                     }
                 }
         }

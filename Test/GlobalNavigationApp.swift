@@ -10,13 +10,23 @@ enum Route: Hashable {
     case reviews([Review])
 }
 
+final class AppModel: ObservableObject {
+    @Published var path: [Route] = []
+    
+    func logout() {
+        withAnimation {
+            path = []
+        }
+    }
+}
+
 @main
 struct GlobalNavigationApp: App {
-    @State private var path: [Route] = []
+    @StateObject private var appModel = AppModel()
 
     var body: some Scene {
         WindowGroup {
-            NavigationStack(path: $path) {
+            NavigationStack(path: $appModel.path) {
                 VStack {
                     LoginScreen()
                 }.navigationDestination(for: Route.self) { route in
@@ -28,10 +38,11 @@ struct GlobalNavigationApp: App {
                         case let .detail(movie):
                             MovieDetailScreen(movie: movie)
                         case let .reviews(reviews):
-                            ReviewListScreen(path: $path, reviews: reviews)
+                            ReviewListScreen(reviews: reviews)
                     }
                 }
             }
+            .environmentObject(appModel)
         }
     }
 }
