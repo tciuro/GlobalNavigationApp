@@ -3,6 +3,21 @@
 
 import SwiftUI
 
+enum Route: Hashable {
+    case login
+    case list
+    case detail(Movie)
+    case reviews([Review])
+}
+
+final class MoviesModel: ObservableObject {
+    @Published var path: [Route] = []
+
+    func popToRoot() {
+        path = []
+    }
+}
+
 struct Movie: Hashable {
     let name: String
 }
@@ -12,8 +27,66 @@ struct Review: Hashable {
 }
 
 struct LoginScreen: View {
+    @EnvironmentObject private var appModel: AppModel
+
     var body: some View {
-        NavigationLink("Login", value: Route.list)
+        Button("Login") {
+            appModel.shouldAuthenticate = false
+        }
+    }
+}
+
+struct MovieListScreen: View {
+    @EnvironmentObject private var appModel: AppModel
+    @StateObject private var moviesModel = MoviesModel()
+
+    private let movies = [Movie(name: "Spiderman"), Movie(name: "Batman")]
+
+    var body: some View {
+        TabView {
+            NavigationStack(path: $moviesModel.path) {
+                List(movies, id: \.name) { movie in
+                    NavigationLink(movie.name, value: Route.detail(movie))
+                }
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Logout") {
+                            appModel.logout()
+                        }
+                    }
+                }
+                .navigationDestination(for: Route.self) { route in
+                    switch route {
+                        case .login:
+                            LoginScreen()
+                        case .list:
+                            MovieListScreen()
+                        case let .detail(movie):
+                            MovieDetailScreen(movie: movie)
+                        case let .reviews(reviews):
+                            ReviewListScreen(reviews: reviews)
+                    }
+                }
+            }
+            .tabItem {
+                Label("Menu", systemImage: "list.dash")
+            }
+            .environmentObject(moviesModel)
+
+            NavigationStack {
+                Text("Hello World!")
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("Logout") {
+                                appModel.logout()
+                            }
+                        }
+                    }
+            }
+            .tabItem {
+                Label("Settings", systemImage: "gear")
+            }
+        }
     }
 }
 
@@ -31,7 +104,8 @@ struct MovieDetailScreen: View {
 
 struct ReviewListScreen: View {
     @EnvironmentObject private var appModel: AppModel
-    
+    @EnvironmentObject private var moviesModel: MoviesModel
+
     let reviews: [Review]
 
     var body: some View {
@@ -40,20 +114,15 @@ struct ReviewListScreen: View {
         }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Pop to Root") {
+                    moviesModel.popToRoot()
+                }
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Button("Logout") {
                     appModel.logout()
                 }
             }
-        }
-    }
-}
-
-struct MovieListScreen: View {
-    let movies = [Movie(name: "Spiderman"), Movie(name: "Batman")]
-
-    var body: some View {
-        List(movies, id: \.name) { movie in
-            NavigationLink(movie.name, value: Route.detail(movie))
         }
     }
 }
