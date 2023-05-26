@@ -1,26 +1,78 @@
-//
-//  ContentView.swift
-//  Test
-//
-//  Created by Tito Ciuro on 5/25/23.
-//
+// GlobalNavigationApp
+// Copyright (c) 2023 Webbo, Inc.
 
 import SwiftUI
 
-struct ContentView: View {
+struct Movie: Hashable {
+    let name: String
+}
+
+struct Review: Hashable {
+    let text: String
+}
+
+struct LoginScreen: View {
+    var body: some View {
+        NavigationLink("Login", value: Route.list)
+    }
+}
+
+struct MovieDetailScreen: View {
+    let movie: Movie
+
     var body: some View {
         VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundColor(.accentColor)
-            Text("Hello, world!")
+            Text(movie.name)
+                .font(.largeTitle)
+            NavigationLink("Reviews", value: Route.reviews([Review(text: "Good movie!")]))
         }
-        .padding()
+    }
+}
+
+struct ReviewListScreen: View {
+    @Binding var path: [Route]
+    let reviews: [Review]
+
+    var body: some View {
+        List(reviews, id: \.text) { review in
+            Text(review.text)
+        }
+        .toolbar {
+            ToolbarItem(placement: .bottomBar) {
+                Button("Pop to Root") {
+                    path = []
+                }
+            }
+        }
+    }
+}
+
+struct MovieListScreen: View {
+    let movies = [Movie(name: "Spiderman"), Movie(name: "Batman")]
+
+    var body: some View {
+        List(movies, id: \.name) { movie in
+            NavigationLink(movie.name, value: Route.detail(movie))
+        }
     }
 }
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView()
+        NavigationStack {
+            MovieListScreen()
+                .navigationDestination(for: Route.self) { route in
+                    switch route {
+                        case .login:
+                            LoginScreen()
+                        case .list:
+                            MovieListScreen()
+                        case let .detail(movie):
+                            MovieDetailScreen(movie: movie)
+                        case let .reviews(reviews):
+                            ReviewListScreen(path: .constant([]), reviews: reviews)
+                    }
+                }
+        }
     }
 }
